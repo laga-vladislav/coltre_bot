@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "coltre-bot"
+version = "0.1.0"
+description = ""
+authors = ["laga-vladislav <laga.ladislav@yandex.ru>"]
+readme = "README.md"
+packages = [{include = "coltre_bot"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
