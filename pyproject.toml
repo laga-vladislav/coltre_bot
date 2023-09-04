@@ -8,6 +8,8 @@ packages = [{include = "coltre_bot"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+pytelegrambotapi = "^4.13.0"
+aiohttp = "^3.8.5"
 
 
 [build-system]
