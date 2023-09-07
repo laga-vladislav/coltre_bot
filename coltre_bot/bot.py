@@ -2,7 +2,7 @@ import asyncio
 
 from telebot.async_telebot import AsyncTeleBot
 
-from handlers import start_handler
+from handlers import start_handler, current_program_handler
 
 from coltre_bot import config
 
@@ -20,6 +20,10 @@ if __name__ == "__main__":
         @bot.message_handler(commands=['start'])
         async def start(message):
             await start_handler.start_handler(bot, message.chat.id)
+
+        @bot.message_handler(commands=['current_program'])
+        async def current_program(message):
+            await current_program_handler.current_program_handler(bot, message.chat.id)
 
         asyncio.run(bot.polling())
     except Exception:
