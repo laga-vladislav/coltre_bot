@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
-import aiomysql
+
+from coltre_bot.core.db import fetch_all
 
 
 @dataclasses.dataclass
@@ -11,17 +12,23 @@ class Exercise:
     unit: str
 
 
-async def get_exercises(loop) -> list[Exercise]:
-    pool = await aiomysql.create_pool(host='localhost', port=3307,
-                                      user='bot', password='sOSDGB',
-                                      db='coltre', loop=loop)
-    async with pool.acquire() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute("SELECT * from exercise;")
-            results = await cur.fetchall()
-    pool.close()
-    await pool.wait_closed()
+async def get_exercises() -> list[Exercise]:
+    exercise_sql_query = _get_exercise_sql_query()
+    results = await fetch_all(exercise_sql_query)
 
+    exercises = _parse_fetch_all(results)
+    print(exercises)
+
+    return exercises
+
+
+def _get_exercise_sql_query():
+    return """
+        SELECT * from exercise;
+    """
+
+
+def _parse_fetch_all(results: tuple) -> list[Exercise]:
     exercises = []
     for exercise in results:
         exercises.append(
@@ -32,13 +39,9 @@ async def get_exercises(loop) -> list[Exercise]:
                 unit=exercise[3]
             )
         )
-    print(exercises)
-    # [Exercise(id=1, name='Отжимания', repetitions_count=180, unit='раз'),
-    # Exercise(id=2, name='Приседания', repetitions_count=220, unit='раз'),
-    # Exercise(id=3, name='Подтягивания', repetitions_count=65, unit='раз'),
-    # Exercise(id=4, name='Планка', repetitions_count=12, unit='минут')]
     return exercises
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(get_exercises(loop))
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(get_exercises())
