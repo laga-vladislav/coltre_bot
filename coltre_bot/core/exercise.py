@@ -17,15 +17,11 @@ async def get_exercises() -> list[Exercise]:
     results = await fetch_all(exercise_sql_query)
 
     exercises = _parse_fetch_all(results)
-    print(exercises)
-
     return exercises
 
 
 def _get_exercise_sql_query():
-    return """
-        SELECT * from exercise;
-    """
+    return """SELECT * from exercise;"""
 
 
 def _parse_fetch_all(results: tuple) -> list[Exercise]:

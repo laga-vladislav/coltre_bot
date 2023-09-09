@@ -5,8 +5,7 @@ from coltre_bot.core import exercise
 async def build_text() -> str:
     """Формируем сообщение со всеми упражнениями"""
     exercises = await _get_exercises()
-    text = \
-        "На данный момент наша программа состоит из следующих упражнений:\n\n"
+    text = "На данный момент наша программа состоит из следующих упражнений:\n\n"
     for index, exercise_instance in enumerate(exercises):
         text += f"{index + 1}. {exercise_instance.name} — " \
                 f"{exercise_instance.repetitions_count} {exercise_instance.unit}\n"

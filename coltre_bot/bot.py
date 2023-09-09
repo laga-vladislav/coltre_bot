@@ -21,12 +21,11 @@ if __name__ == "__main__":
         async def start(message):
             await start_handler.start_handler(bot, message.chat.id)
 
+        """Current program command"""
         @bot.message_handler(commands=['current_program'])
         async def current_program(message):
             await current_program_handler.current_program_handler(bot, message.chat.id)
 
         asyncio.run(bot.polling())
-    except Exception:
-        import traceback
-
-        print(traceback.format_exc())
+    except Exception as e:
+        print(e)
