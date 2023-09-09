@@ -50,7 +50,7 @@ class Information:
 
     def confirm(self):
         while True:
-            value = input(f"Подтвердить действие? [Y/N]: ")
+            value = input(f"Подтвердить действие? [Y/N]: ").upper()
             if value == 'Y':
                 self.set_values_to_file()
                 return True
