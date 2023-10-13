@@ -13,6 +13,9 @@ DROP TABLE IF EXISTS `exercise`;
 DROP TABLE IF EXISTS `user`;
 DROP TABLE IF EXISTS `group`;
 DROP TABLE IF EXISTS `training_level`;
+DROP TABLE IF EXISTS `action`;
+DROP TABLE IF EXISTS `rating`;
+DROP TABLE IF EXISTS `membership_request`;
 
 CREATE TABLE IF NOT EXISTS `training_level` (
   `training_level_id` tinyint unsigned NOT NULL AUTO_INCREMENT,
@@ -24,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `training_level` (
 
 CREATE TABLE IF NOT EXISTS `group` (
   `group_id` smallint unsigned NOT NULL AUTO_INCREMENT,
-  `created_date` date NOT NULL,
+  `created_date` date NOT NULL DEFAULT (current_date()),
   `end_date` date NOT NULL,
   PRIMARY KEY (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -54,7 +57,7 @@ CREATE TABLE IF NOT EXISTS `exercise` (
 
 CREATE TABLE IF NOT EXISTS `repetitions_counter` (
   `user_id` bigint unsigned NOT NULL,
-  `current_user_date` date NOT NULL,
+  `current_user_date` date NOT NULL DEFAULT (current_date()),
   `exercise_id` tinyint unsigned NOT NULL,
   `repetition_count` tinyint unsigned NOT NULL,
   PRIMARY KEY (`user_id`),
@@ -67,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `videomessage` (
   `videomessage_id` int unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint unsigned NOT NULL,
   `telegram_message_id` mediumint unsigned NOT NULL,
-  `created_at` datetime NOT NULL,
+  `created_datetime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `exercise_id` tinyint unsigned NOT NULL,
   `exercise_count` tinyint unsigned NOT NULL,
   PRIMARY KEY (`videomessage_id`),
@@ -95,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `verification` (
   `checked_user_id` bigint unsigned NOT NULL,
   `videomessage_id` int unsigned NOT NULL,
   `real_done_count` tinyint unsigned NOT NULL,
-  `verified_at` datetime NOT NULL,
+  `verification_datetime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`verification_id`),
   KEY `verification-inspector` (`inspector_id`),
   KEY `verification-checked_user` (`checked_user_id`),
@@ -108,7 +111,7 @@ CREATE TABLE IF NOT EXISTS `verification` (
 CREATE TABLE IF NOT EXISTS `warning` (
   `warning_id` smallint unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint unsigned NOT NULL,
-  `warning_date` date NOT NULL,
+  `warning_datetime` date NOT NULL DEFAULT (current_timestamp()),
   `exercise_id` tinyint unsigned NOT NULL,
   PRIMARY KEY (`warning_id`),
   KEY `warning-user` (`user_id`),
@@ -132,7 +135,7 @@ CREATE TABLE IF NOT EXISTS `penalty` (
   `user_id` bigint unsigned NOT NULL,
   `amount` tinyint unsigned NOT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'pending',
-  `penalty_date` date NOT NULL,
+  `penalty_datetime` date NOT NULL DEFAULT (current_timestamp()),
   PRIMARY KEY (`penalty_id`),
   KEY `penalty-user` (`user_id`),
   CONSTRAINT `penalty-user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
@@ -149,10 +152,34 @@ CREATE TABLE IF NOT EXISTS `transaction` (
 CREATE TABLE IF NOT EXISTS `blacklist` (
   `user_id` bigint unsigned NOT NULL,
   `reason_description` text,
-  `block_date` date NOT NULL,
+  `block_date` date NOT NULL DEFAULT (current_date()),
   `unblock_date` date DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   CONSTRAINT `blacklist-user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS `action` (
+  `action_id` tinyint unsigned NOT NULL AUTO_INCREMENT,
+  `action_name` varchar(32) NOT NULL,
+  `action_description` varchar(256),
+  `awarded_points` tinyint NOT NULL,
+  PRIMARY KEY (`action_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS `rating` (
+  `user_id` bigint unsigned NOT NULL,
+  `action_id` tinyint unsigned NOT NULL,
+  `awarded_datetime` datetime NOT NULL DEFAULT (current_timestamp()),
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `rating-user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON UPDATE CASCADE,
+  CONSTRAINT `rating-action` FOREIGN KEY (`action_id`) REFERENCES `action` (`action_id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS `membership_request` (
+  `user_id` bigint unsigned NOT NULL,
+  `request_date` date NOT NULL DEFAULT (current_date()),
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `membership_request-user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `exercise`(name, norm, unit) VALUES
