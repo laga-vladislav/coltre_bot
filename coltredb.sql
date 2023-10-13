@@ -8,7 +8,6 @@ DROP TABLE IF EXISTS `videomessage`;
 DROP TABLE IF EXISTS `warning_counter`;
 DROP TABLE IF EXISTS `warning`;
 DROP TABLE IF EXISTS `transaction`;
-
 DROP TABLE IF EXISTS `penalty`;
 DROP TABLE IF EXISTS `exercise`;
 DROP TABLE IF EXISTS `user`;
@@ -19,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `training_level` (
   `training_level_id` tinyint unsigned NOT NULL AUTO_INCREMENT,
   `training_level_name` varchar(50) NOT NULL,
   `description` varchar(1000) NOT NULL,
-  `multiplier` tinyint unsigned NOT NULL,
+  `multiplier` double unsigned NOT NULL,
   PRIMARY KEY (`training_level_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
