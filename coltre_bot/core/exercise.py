@@ -8,7 +8,7 @@ from coltre_bot.core.db import fetch_all
 class Exercise:
     id: int
     name: str
-    repetitions_count: int
+    norm: int
     unit: str
 
 
@@ -31,8 +31,8 @@ def _parse_fetch_all(results: tuple) -> list[Exercise]:
             Exercise(
                 id=exercise[0],
                 name=exercise[1],
-                repetitions_count=exercise[2],
-                unit=exercise[3]
+                norm=exercise[3],
+                unit=exercise[4]
             )
         )
     return exercises

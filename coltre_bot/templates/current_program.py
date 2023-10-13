@@ -8,10 +8,8 @@ async def build_text() -> str:
     text = "На данный момент наша программа состоит из следующих упражнений:\n\n"
     for index, exercise_instance in enumerate(exercises):
         text += f"{index + 1}. {exercise_instance.name} — " \
-                f"{exercise_instance.repetitions_count} {exercise_instance.unit}\n"
+                f"{exercise_instance.norm} {exercise_instance.unit}\n"
 
-    """Временно проставляем данные о выходных вручную"""
-    text += "Два выходных дня и по-новой!"
     return text
 
 async def _get_exercises() -> list[exercise.Exercise]:
