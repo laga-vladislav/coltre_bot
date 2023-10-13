@@ -10,17 +10,18 @@ DROP TABLE IF EXISTS `warning`;
 DROP TABLE IF EXISTS `transaction`;
 DROP TABLE IF EXISTS `penalty`;
 DROP TABLE IF EXISTS `exercise`;
+DROP TABLE IF EXISTS `rating`;
+DROP TABLE IF EXISTS `action`;
+DROP TABLE IF EXISTS `membership_request`;
 DROP TABLE IF EXISTS `user`;
 DROP TABLE IF EXISTS `group`;
 DROP TABLE IF EXISTS `training_level`;
-DROP TABLE IF EXISTS `action`;
-DROP TABLE IF EXISTS `rating`;
-DROP TABLE IF EXISTS `membership_request`;
+
 
 CREATE TABLE IF NOT EXISTS `training_level` (
   `training_level_id` tinyint unsigned NOT NULL AUTO_INCREMENT,
   `training_level_name` varchar(50) NOT NULL,
-  `description` varchar(1000) NOT NULL,
+  `description` varchar(1000) NULL,
   `multiplier` double unsigned NOT NULL,
   PRIMARY KEY (`training_level_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `username` varchar(64) DEFAULT NULL,
   `first_name` varchar(96) DEFAULT NULL,
   `training_level_id` tinyint unsigned NOT NULL,
-  `group_id` smallint unsigned NOT NULL,
+  `group_id` smallint unsigned NULL,
   `timezone` tinyint NOT NULL,
   PRIMARY KEY (`user_id`),
   KEY `user-training_level` (`training_level_id`),
@@ -187,3 +188,9 @@ INSERT INTO `exercise`(name, norm, unit) VALUES
 	('Приседания', 220, 'раз'),
     ('Подтягивания', 65, 'раз'),
     ('Планка', 10, 'минут');
+
+INSERT INTO training_level (training_level_name, multiplier) VALUES
+    ('Начальный', 0.75),
+    ('Стандартный', 1),
+    ('Продвинутый', 1.25);
+
