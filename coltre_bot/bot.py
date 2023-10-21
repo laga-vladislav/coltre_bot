@@ -3,7 +3,7 @@ import asyncio
 from telebot.async_telebot import AsyncTeleBot
 from telebot.storage import StateMemoryStorage
 
-from handlers import base_handler_with_templates, current_program_handler, join_handler
+from handlers import base_handler_with_templates, current_program_handler
 
 from coltre_bot import config
 
@@ -15,7 +15,7 @@ if not config.BOT_TOKEN or not config.COLTRE_CHANNEL_ID:
 if __name__ == "__main__":
     try:
         registration_storage = StateMemoryStorage()
-        bot = AsyncTeleBot(config.BOT_TOKEN, registration_storage)
+        bot = AsyncTeleBot(config.BOT_TOKEN)
         """Start command"""
         @bot.message_handler(commands=['start'])
         async def start_command(message):

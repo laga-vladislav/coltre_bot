@@ -1,6 +1,7 @@
 import asyncio
 
-from coltre_bot.core import exercise
+from coltre_bot.core.service import exercise
+
 
 async def build_text() -> str:
     """Формируем сообщение со всеми упражнениями"""
