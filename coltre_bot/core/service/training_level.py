@@ -7,7 +7,6 @@ from coltre_bot.core.models.training_level import TrainingLevel
 async def get_training_levels() -> list[TrainingLevel]:
     training_levels_sql_query = _get_training_levels_sql_query()
     results = await fetch_all(training_levels_sql_query)
-    print(results)
     training_levels = _parse_fetch_all(results)
     return training_levels
 

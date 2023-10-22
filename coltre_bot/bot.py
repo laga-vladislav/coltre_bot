@@ -1,9 +1,9 @@
 import asyncio
 
 from telebot.async_telebot import AsyncTeleBot
-from telebot.storage import StateMemoryStorage
+from telebot.asyncio_storage import StateMemoryStorage
 
-from handlers import base_handler_with_templates, current_program_handler
+from handlers import base_handler_with_templates, current_program_handler, join_handler
 
 from coltre_bot import config
 
@@ -14,8 +14,9 @@ if not config.BOT_TOKEN or not config.COLTRE_CHANNEL_ID:
 
 if __name__ == "__main__":
     try:
-        registration_storage = StateMemoryStorage()
-        bot = AsyncTeleBot(config.BOT_TOKEN)
+
+        bot = AsyncTeleBot(token=config.BOT_TOKEN, state_storage=StateMemoryStorage())
+
         """Start command"""
         @bot.message_handler(commands=['start'])
         async def start_command(message):
@@ -36,6 +37,12 @@ if __name__ == "__main__":
                 bot_instance=bot,
                 chat_id=message.chat.id,
                 command_name='help')
+
+        """Join"""
+        @bot.message_handler(commands=['join'])
+        async def join_command(message):
+            await join_handler.join_handler(bot_instance=bot, message=message)
+
 
         asyncio.run(bot.polling())
     except Exception as e:
