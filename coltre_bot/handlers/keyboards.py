@@ -1,10 +1,13 @@
 from typing import Optional, TypeAlias
-from telebot.types import ReplyKeyboardMarkup
+from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
 
 from coltre_bot.exceptions import WrongDataNumbersKeyboard
 
 NumbersList: TypeAlias = list[int]
 LenOfRange: TypeAlias = int
+
+def delete_keyboad() -> ReplyKeyboardRemove:
+    return ReplyKeyboardRemove()
 
 def get_numbers_keyboard(
         data: NumbersList | LenOfRange,
