@@ -3,6 +3,7 @@ import asyncio
 from telebot.async_telebot import AsyncTeleBot
 
 from coltre_bot.templates import renderer
+from coltre_bot.handlers import keyboards
 
 
 async def base_handler(bot_instance: AsyncTeleBot, chat_id: int, command_name: str) -> None:
@@ -10,7 +11,8 @@ async def base_handler(bot_instance: AsyncTeleBot, chat_id: int, command_name: s
     rendered_text = renderer.render_template(command_name)
     await bot_instance.send_message(
         chat_id=chat_id,
-        text=rendered_text
+        text=rendered_text,
+        reply_markup=keyboards.delete_keyboad()
     )
 
 async def main():
