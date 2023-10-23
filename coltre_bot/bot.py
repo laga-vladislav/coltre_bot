@@ -1,5 +1,6 @@
 import asyncio
 
+from telebot import asyncio_filters
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 
@@ -41,8 +42,15 @@ if __name__ == "__main__":
         """Join"""
         @bot.message_handler(commands=['join'])
         async def join_command(message):
-            await join_handler.join_handler(bot_instance=bot, message=message)
+            handler = join_handler.JoinHandler(
+                bot_instance=bot,
+                message=message
+            )
+            await handler.build_join_handler()
 
+
+        bot.add_custom_filter(asyncio_filters.StateFilter(bot))
+        bot.add_custom_filter(asyncio_filters.IsDigitFilter())
 
         asyncio.run(bot.polling())
     except Exception as e:
