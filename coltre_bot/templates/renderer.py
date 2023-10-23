@@ -10,6 +10,8 @@ def render_template(template_name: str, data: dict | None = None) -> str:
     template = _get_template_env().get_template(template_name)
     rendered = template.render(**data).replace("\n", " ")
     rendered = rendered.replace("<br>", "\n")
+    rendered = rendered.replace("<b>", "*")
+    rendered = rendered.replace("</b>", "*")
     rendered = "\n".join(line.strip() for line in rendered.split("\n"))
     return rendered
 
