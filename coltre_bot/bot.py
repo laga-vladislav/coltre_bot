@@ -1,6 +1,7 @@
 import asyncio
 
 from telebot import asyncio_filters
+from telebot.asyncio_filters import TextMatchFilter
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_storage import StateMemoryStorage
 
@@ -51,6 +52,7 @@ if __name__ == "__main__":
 
         bot.add_custom_filter(asyncio_filters.StateFilter(bot))
         bot.add_custom_filter(asyncio_filters.IsDigitFilter())
+        bot.add_custom_filter(TextMatchFilter())
 
         asyncio.run(bot.polling())
     except Exception as e:

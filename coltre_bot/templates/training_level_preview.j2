@@ -1,0 +1,10 @@
+<b>{{ training_level.training_level_name }}</b><br>
+
+Описание: {{ training_level.description }}<br><br>
+
+Количество повторений для каждого упражнения на этом уровне:<br>
+{% for exercise in exercises %}
+  {{ loop.index }}. {{ exercise.name }} — {{ (exercise.norm * training_level.multiplier) | int }} {{ exercise.unit }}.<br>
+{% endfor %}<br>
+
+Продолжить?
