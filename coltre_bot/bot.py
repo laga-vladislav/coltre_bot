@@ -43,11 +43,7 @@ if __name__ == "__main__":
         """Join"""
         @bot.message_handler(commands=['join'])
         async def join_command(message):
-            handler = join_handler.JoinHandler(
-                bot_instance=bot,
-                message=message
-            )
-            await handler.build_join_handler()
+            await join_handler.join_handler(bot, message)
 
 
         bot.add_custom_filter(asyncio_filters.StateFilter(bot))
