@@ -5,3 +5,7 @@ class WrongDataNumbersKeyboard(Exception):
 class WrongMonthDigit(Exception):
     """Неверное число для определения месяца"""
     pass
+
+class UserAlreadyRegistered(Exception):
+    """Пользователь уже есть в базе данных"""
+    pass
