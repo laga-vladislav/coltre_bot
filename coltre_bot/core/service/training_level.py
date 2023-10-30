@@ -1,7 +1,15 @@
+import dataclasses
 import asyncio
 
 from coltre_bot.core.db import fetch_all
-from coltre_bot.core.models.training_level import TrainingLevel
+
+
+@dataclasses.dataclass
+class TrainingLevel:
+    id: int
+    training_level_name: str
+    description: str
+    multiplier: float
 
 
 async def get_training_levels() -> list[TrainingLevel]:
@@ -32,6 +40,7 @@ def _parse_fetch_all(results: tuple) -> list[TrainingLevel]:
 async def main():
     training_levels = await get_training_levels()
     print(training_levels)
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

@@ -1,7 +1,15 @@
+import dataclasses
 import asyncio
 
 from coltre_bot.core.db import fetch_all
-from coltre_bot.core.models.exercise import Exercise
+
+
+@dataclasses.dataclass
+class Exercise:
+    id: int
+    name: str
+    norm: int
+    unit: str
 
 
 async def get_exercises() -> list[Exercise]:
