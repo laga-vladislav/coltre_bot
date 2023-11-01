@@ -1,5 +1,5 @@
-import asyncio
 import dataclasses
+import asyncio
 
 from coltre_bot.core.db import fetch_all
 
@@ -38,6 +38,11 @@ def _parse_fetch_all(results: tuple) -> list[Exercise]:
     return exercises
 
 
+async def main():
+    exercises = await get_exercises()
+    print(exercises)
+
+
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(get_exercises())
+    loop.run_until_complete(main())

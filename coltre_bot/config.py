@@ -16,6 +16,7 @@ def _init_ini():
 
 """Общие переменные"""
 BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "templates"
 db_settings = _init_ini()
 
 """Переменные, связанные с ботом непосредственно"""
