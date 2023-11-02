@@ -1,7 +1,8 @@
 import asyncio
 import aiomysql
 
-from coltre_bot import config
+from coltre_bot import config, exceptions
+
 
 async def fetch_all(sql_query: str) -> tuple:
     pool = await _create_pool()
@@ -28,6 +29,18 @@ async def fetch_one(sql_query: str) -> tuple:
 
 
 async def insert_data(sql_query: str) -> None:
+    """
+    Возможные ошибки:
+    aiomysql.IntegrityError (неуникальный ключевой элемент)
+    """
+    await execute_and_commit(sql_query)
+
+
+async def delete_data(sql_query: str) -> None:
+    await execute_and_commit(sql_query)
+
+
+async def execute_and_commit(sql_query: str) -> None:
     pool = await _create_pool()
 
     async with pool.acquire() as conn:
@@ -54,8 +67,9 @@ async def main():
     # sql = _register_user_sql_query(user)
     # print(sql)
     # await insert_data(sql)
-    res = await fetch_one("select training_level_id from user where user_id=1;")
-    print(res)
+    # res = await fetch_one("select training_level_id from user where user_id=1;")
+    # print(res)
+    await insert_data("INSERT INTO membership_request (user_id) VALUES (2);")
 
 
 if __name__ == '__main__':
