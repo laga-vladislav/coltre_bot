@@ -30,7 +30,8 @@ def validate_user(handler):
     return wrapper
 
 
-@validate_user
+# оставлю на лучшие времена
+# @validate_user
 async def join_handler(bot, message):
     await register_handlers(bot)
     await TrainingLevelSubprogram(bot_instance=bot).ask(message)
@@ -244,7 +245,8 @@ class TimezoneSubprogram(BaseJoinSubprogram):
         await self.set_new_user_data(user_id, new_user_data)
 
     async def exit_subprogram(self, message: Message):
-        """Очищаем временное хранилище"""
+        """Запускаем процесс формирования заявки на вступление и очищаем временное хранилище"""
+
         await self.set_new_user_data(message.chat.id, {})
 
 """
