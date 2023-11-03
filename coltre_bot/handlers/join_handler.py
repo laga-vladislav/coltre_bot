@@ -10,7 +10,7 @@ from telebot.types import Message
 
 from coltre_bot.core.service.user import is_group_member
 from coltre_bot.core.service.training_level import get_training_levels, TrainingLevel
-from coltre_bot.core.service.exercise import get_exercises
+from coltre_bot.core.service.exercise import get_exercises, Exercise
 from coltre_bot.templates.renderer import render_template
 from coltre_bot.handlers import keyboards
 from coltre_bot.exceptions import WrongMonthDigit
@@ -38,16 +38,15 @@ async def join_handler(bot, message):
 
 
 class JoiningStates(StatesGroup):
-    training_level_request = State()
-    training_level_preview = State()
-    timezone_request = State()
-    timezone_preview = State()
+    """Состояния пользователя"""
+    training_level_request = State()  # запрос номера уровня подготовки от пользователя
+    training_level_preview = State()  # предпросмотр данных для определённого уровня подготовки
+    timezone_request = State()  # запрос часового пояса от пользователя
+    timezone_preview = State()  # предпросмотр даты и времени по полученном часовому поясу пользователя
 
 
 class StateController:
-    """
-    TODO вынести часть этого класса в базовый, реализовать наследование
-    """
+    """Управляет состояниями пользователя"""
 
     def __init__(self, bot_instance: AsyncTeleBot):
         self.BOT_INSTANCE = bot_instance
@@ -78,24 +77,30 @@ class StateController:
 
 
 class BaseJoinSubprogram(ABC):
+    """Абстрактный класс подпрограмм join handler'а"""
+
     def __init__(self, bot_instance: AsyncTeleBot):
         self.STATE_CONTROLLER = StateController(bot_instance)
         self.BOT_INSTANCE = bot_instance
 
     @abstractmethod
     async def ask(self, message: Message):
+        """Точка входа в подпрограмму"""
         pass
 
     async def get_user_data(self, user_id: int) -> dict:
+        """Получаем все данных из временного хранилища пользователя"""
         async with self.BOT_INSTANCE.retrieve_data(user_id=user_id) as data:
             return data
 
     async def set_new_user_data(self, user_id: int, new_data: dict):
+        """Перезаписывает данные во временном хранилище пользователя"""
         async with self.BOT_INSTANCE.retrieve_data(user_id=user_id) as data:
             data = new_data
 
     @abstractmethod
     async def exit_subprogram(self, message: Message):
+        """Точка выхода из подпрограммы"""
         pass
 
 
@@ -112,11 +117,14 @@ class TrainingLevelSubprogram(BaseJoinSubprogram):
         await self.training_level_request(message)
 
     async def training_level_request(self, message: Message, training_levels: Optional[list[TrainingLevel]] = None):
+        """Запуск процесса запрашивания уровня подготовки от пользователя"""
         await self.STATE_CONTROLLER.set_training_level_request(message.chat.id)
 
         training_levels = await self._check_or_get_training_levels(training_levels)
 
-        text, count_of_training_levels = self._get_message_text_and_len_of_training_levels(training_levels)
+        text = self._get_message_text_training_level_request(training_levels)
+        count_of_training_levels = len(training_levels)
+
         keyboard_with_level_numbers = keyboards.get_numbers_keyboard(
             data=count_of_training_levels
         )
@@ -128,16 +136,18 @@ class TrainingLevelSubprogram(BaseJoinSubprogram):
         )
 
     @staticmethod
-    def _get_message_text_and_len_of_training_levels(training_levels: list[TrainingLevel]) -> Tuple[str, int]:
+    def _get_message_text_training_level_request(training_levels: list[TrainingLevel]) -> Tuple[str, int]:
+        """Возвращает отрендеренный текст для запроса уровня подготовки"""
         rendered_text = render_template(
             "training_level_request",
             {
                 'training_levels': training_levels
             }
         )
-        return rendered_text, len(training_levels)
+        return rendered_text
 
     async def training_level_preview(self, message: Message, training_levels: list[TrainingLevel]):
+        """Запуск процесса предпросмотра уровня подготовки для пользователя"""
         await self.STATE_CONTROLLER.set_training_level_preview(message.chat.id)
 
         selected_training_level = training_levels[int(message.text) - 1]
@@ -145,19 +155,24 @@ class TrainingLevelSubprogram(BaseJoinSubprogram):
 
         exercises = await get_exercises()
 
-        rendered_text = render_template(
-            template_name="training_level_preview",
-            data={
-                'training_level': selected_training_level,
-                'exercises': exercises
-            }
-        )
+        rendered_text = self._get_message_text_training_level_preview(selected_training_level, exercises)
 
         await self.BOT_INSTANCE.send_message(
             chat_id=message.chat.id,
             text=rendered_text,
             reply_markup=keyboards.get_yes_or_no_keyboard(),
             parse_mode='Markdown'
+        )
+
+    @staticmethod
+    def _get_message_text_training_level_preview(selected_training_level: TrainingLevel, exercises: list[Exercise]):
+        """Возвращает отрендеренный текст для предпросмотра уровня подготовки"""
+        return render_template(
+            template_name="training_level_preview",
+            data={
+                'training_level': selected_training_level,
+                'exercises': exercises
+            }
         )
 
     async def incorrect_get_training_level_from_user(self, message: Message):
@@ -173,11 +188,13 @@ class TrainingLevelSubprogram(BaseJoinSubprogram):
         return training_levels
 
     async def _set_selected_training_level(self, user_id: int, training_level: TrainingLevel):
+        """Сохраняет выбранный пользователем уровень подготовки во временном хранилище"""
         old_user_data = await self.get_user_data(user_id)
         new_user_data = old_user_data['selected_training_level'] = training_level
         await self.set_new_user_data(user_id, new_user_data)
 
     async def _get_selected_training_level(self, user_id: int):
+        """Получаем выбранный уровень подготовки пользователя из временного хранилище"""
         try:
             data = await self.get_user_data(user_id)
             return data['selected_training_level']
@@ -185,6 +202,8 @@ class TrainingLevelSubprogram(BaseJoinSubprogram):
             return
 
     async def exit_subprogram(self, message: Message, training_levels: Optional[list[TrainingLevel]] = None):
+        """Сохраняет выбранный уровень подготовки во временном хранилище, а также запускает
+        подпрограмму TimezoneSubprogram"""
         training_levels = await self._check_or_get_training_levels(training_levels)
         await self._set_selected_training_level(message.chat.id, training_levels)
         await TimezoneSubprogram(self.BOT_INSTANCE).ask(message)
@@ -248,6 +267,7 @@ class TimezoneSubprogram(BaseJoinSubprogram):
         """Запускаем процесс формирования заявки на вступление и очищаем временное хранилище"""
 
         await self.set_new_user_data(message.chat.id, {})
+
 
 """
 TODO: Вынести функционал работы с часовыми поясами в отдельный сервис
@@ -345,6 +365,7 @@ async def register_handlers(bot):
             text="Выберите один из предложенных вариантов, пожалуйста",
             reply_markup=keyboards.get_yes_or_no_keyboard()
         )
+
     """Хендлены, относящиеся к TimezoneSubprogram"""
 
     @bot.message_handler(state=JoiningStates.timezone_request, is_digit=False)
