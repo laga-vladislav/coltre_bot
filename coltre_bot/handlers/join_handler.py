@@ -8,7 +8,8 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_filters import TextFilter
 from telebot.types import Message
 
-from coltre_bot.core.service.user import is_group_member
+from coltre_bot.core.service.user import is_group_member, register_user, make_user_instance
+from coltre_bot.core.service.membership_request import open_request, RequestValidators
 from coltre_bot.core.service.training_level import get_training_levels, TrainingLevel
 from coltre_bot.core.service.exercise import get_exercises, Exercise
 from coltre_bot.templates.renderer import render_template
@@ -16,9 +17,10 @@ from coltre_bot.handlers import keyboards
 from coltre_bot.exceptions import WrongMonthDigit
 
 
-def validate_user(handler):
+def validate_not_group_member(handler):
+    """Пропускает хендлер только если пользователь не состоит в группе"""
     async def wrapper(bot, message):
-        if not await is_group_member(message.chat.id):
+        if await is_group_member(message.chat.id):
             await bot.send_message(
                 chat_id=message.chat.id,
                 text="Вы уже находитесь в группе, поэтому не можете использовать команду /join",
@@ -29,9 +31,32 @@ def validate_user(handler):
 
     return wrapper
 
+def validate_request_not_exists_handler_adapter(handler):
+    """Пропускает хендлер только если пользователь ещё не отправлял заявку на вступление"""
+    async def wrapper(bot, message):
+        layer_passed = False  # триггер выполнения '_layer_to_check_users_request'
+        @RequestValidators.is_not_request_exists
+        async def _layer_to_check_users_request(user_id: int):
+            nonlocal layer_passed
+            layer_passed = True  # если заявка не существует, то триггер становится True
+            await handler(bot, message)
 
-# оставлю на лучшие времена
-# @validate_user
+        await _layer_to_check_users_request(message.chat.id)
+
+        if layer_passed:
+            return  # если триггер сработал, значит хендлер выполнится и следующий код не выполнится
+
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text="Вы уже подали заявки на вступление, поэтому не можете сделать это снова.\nОжидайте уведомление!",
+            reply_markup=keyboards.delete_keyboad()
+        )
+
+    return wrapper
+
+
+@validate_not_group_member
+@validate_request_not_exists_handler_adapter
 async def join_handler(bot, message):
     await register_handlers(bot)
     await TrainingLevelSubprogram(bot_instance=bot).ask(message)
@@ -98,6 +123,24 @@ class BaseJoinSubprogram(ABC):
         async with self.BOT_INSTANCE.retrieve_data(user_id=user_id) as data:
             data = new_data
 
+    async def _get_selected_training_level(self, user_id: int) -> TrainingLevel:
+        """Получаем выбранный уровень подготовки пользователя из временного хранилища"""
+        try:
+            data = await self.get_user_data(user_id)
+            print(data['selected_training_level'])
+            return data['selected_training_level']
+        except KeyError:
+            return
+
+    async def _get_selected_timezone(self, user_id: int) -> int:
+        """Получаем выбранный часовой пояс из временного хранилища"""
+        try:
+            data = await self.get_user_data(user_id)
+            print(data['selected_timezone'])
+            return data['selected_timezone']
+        except KeyError:
+            return
+
     @abstractmethod
     async def exit_subprogram(self, message: Message):
         """Точка выхода из подпрограммы"""
@@ -147,7 +190,9 @@ class TrainingLevelSubprogram(BaseJoinSubprogram):
         return rendered_text
 
     async def training_level_preview(self, message: Message, training_levels: list[TrainingLevel]):
-        """Запуск процесса предпросмотра уровня подготовки для пользователя"""
+        """Запуск процесса предпросмотра уровня подготовки для пользователя.
+        Данный метод также сразу сохраняет выбранный уровень подготовки во временном хранилище.
+        Текст сообщения должен быть числом"""
         await self.STATE_CONTROLLER.set_training_level_preview(message.chat.id)
 
         selected_training_level = training_levels[int(message.text) - 1]
@@ -193,19 +238,10 @@ class TrainingLevelSubprogram(BaseJoinSubprogram):
         new_user_data = old_user_data['selected_training_level'] = training_level
         await self.set_new_user_data(user_id, new_user_data)
 
-    async def _get_selected_training_level(self, user_id: int):
-        """Получаем выбранный уровень подготовки пользователя из временного хранилище"""
-        try:
-            data = await self.get_user_data(user_id)
-            return data['selected_training_level']
-        except KeyError:
-            return
-
     async def exit_subprogram(self, message: Message, training_levels: Optional[list[TrainingLevel]] = None):
         """Сохраняет выбранный уровень подготовки во временном хранилище, а также запускает
-        подпрограмму TimezoneSubprogram"""
-        training_levels = await self._check_or_get_training_levels(training_levels)
-        await self._set_selected_training_level(message.chat.id, training_levels)
+        подпрограмму TimezoneSubprogram.
+        Текст сообщения должен быть: 'Да'"""
         await TimezoneSubprogram(self.BOT_INSTANCE).ask(message)
 
 
@@ -263,9 +299,48 @@ class TimezoneSubprogram(BaseJoinSubprogram):
         new_user_data = old_user_data['selected_timezone'] = timezone_value
         await self.set_new_user_data(user_id, new_user_data)
 
+    @staticmethod
+    async def add_unknown_user(data: dict):
+        """
+        data: dict
+        data keys:
+            user_id: int,
+            first_name: str,
+            training_level_id: int,
+            timezone: int,
+            group_id: int,
+            username: str
+        """
+        user_instance = make_user_instance(
+            user_id=data['user_id'],
+            first_name=data['first_name'],
+            training_level_id=data['training_level_id'],
+            timezone=data['timezone'],
+            group_id=data['group_id'],
+            username=data['username']
+        )
+        await register_user(user_instance)
+
     async def exit_subprogram(self, message: Message):
         """Запускаем процесс формирования заявки на вступление и очищаем временное хранилище"""
 
+        # регистрация пользователя
+        selected_training_level = await self._get_selected_training_level(message.chat.id)
+        selected_timezone = await self._get_selected_timezone(message.chat.id)
+        data = {
+            'user_id': message.chat.id,
+            'first_name': message.from_user.first_name,
+            'training_level_id': selected_training_level.id,
+            'timezone': selected_timezone,
+            'group_id': None,
+            'username': message.from_user.username
+        }
+        await self.add_unknown_user(data)
+
+        # открытие заявки
+        await open_request(message.chat.id)
+
+        # очистка хранилища
         await self.set_new_user_data(message.chat.id, {})
 
 
@@ -396,5 +471,12 @@ async def register_handlers(bot):
         )
 
 
-if __name__ == '__main__':
+async def main():
     pass
+
+
+if __name__ == '__main__':
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
