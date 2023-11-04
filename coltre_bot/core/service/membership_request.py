@@ -15,49 +15,36 @@ class MembershipRequest:
     request_date: datetime
 
 
-async def is_request_with_user_id_exists(user_id: int) -> bool:
-    result = await fetch_all(_get_request_sql_query(user_id))
+async def request_exists(data: int | MembershipRequest) -> bool:
+    result = await fetch_all(_get_request_sql_query(data if isinstance(data, int) else data.user_id))
     return len(result) > 0
 
 
-class Validators:
+class RequestValidators:
     @staticmethod
-    def only_if_request_instance_exists(func):
-        """Декоратор. Проверяет на то, есть ли в базе данных данная заявка
-        параметры: MembershipRequest"""
+    def is_request_exists(func):
+        """Декоратор. Выполняется, если заявка существует"""
 
-        async def wrapper(request_instance: MembershipRequest):
-            if not await is_request_with_user_id_exists(request_instance.user_id):
+        async def wrapper(data: int | MembershipRequest):
+            if not await request_exists(data):
                 return
-            await func(request_instance)
+            await func(data)
 
         return wrapper
 
     @staticmethod
-    def only_if_request_with_user_id_exists(func):
-        """Декоратор. Проверяет на то, есть ли в базе данных заявка с таким id
-        параметры: int"""
+    def is_not_request_exists(func):
+        """Декоратор. Выполняется, если заявка не существует"""
 
-        async def wrapper(user_id: int):
-            if not await is_request_with_user_id_exists(user_id):
+        async def wrapper(data: int | MembershipRequest):
+            if await request_exists(data):
                 return
-            await func(user_id)
-
-        return wrapper
-
-    @staticmethod
-    def only_if_request_with_user_id_not_exists(func):
-        """Декоратор. Проверяет, чтобы заявки не было в базе данных"""
-
-        async def wrapper(user_id: int):
-            if await is_request_with_user_id_exists(user_id):
-                return
-            await func(user_id)
+            await func(data)
 
         return wrapper
 
 
-@Validators.only_if_request_with_user_id_exists
+@RequestValidators.is_request_exists
 async def get_request(user_id: int) -> MembershipRequest:
     get_request_sql_query = _get_request_sql_query(user_id)
     result = await fetch_all(get_request_sql_query)
@@ -77,13 +64,13 @@ def _parse_fetch_all(membership_request: tuple) -> MembershipRequest:
     )
 
 
-@Validators.only_if_request_with_user_id_not_exists
+@RequestValidators.is_not_request_exists
 async def open_request(user_id: int):
     try:
         create_request_insert_query = _create_request_insert_sql_query(user_id)
         await insert_data(create_request_insert_query)
     except IntegrityError:
-        raise exceptions.MembershipRequestErrorUserDoesntExist(f"Пользователя с id={user_id} не существует")
+        raise exceptions.UserDoesntExist(f"Пользователя с id={user_id} не существует")
 
 
 def _create_request_insert_sql_query(user_id: int) -> str:
@@ -91,7 +78,7 @@ def _create_request_insert_sql_query(user_id: int) -> str:
     return sql_query
 
 
-@Validators.only_if_request_instance_exists
+@RequestValidators.is_request_exists
 async def close_request(request: MembershipRequest):
     sql_query = _delete_request_sql_query(request)
     await delete_data(sql_query)
@@ -107,11 +94,9 @@ async def main():
     await open_request(1)
     print(await get_request(1))
 
-    # await close_request(MembershipRequest(1, datetime(year=2023, month=11, day=2).date()))
+    await close_request(MembershipRequest(1, datetime(year=2023, month=11, day=2).date()))
 
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
-
-# TODO: убери декораторы, связанные с наличием заявки в базе данных
